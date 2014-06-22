@@ -2,8 +2,7 @@ package mrtjp.rasterdevice;
 
 import java.io.File;
 
-import net.minecraftforge.common.Configuration;
-import net.minecraftforge.common.Property;
+import net.minecraftforge.common.config.Configuration;
 import cpw.mods.fml.common.event.FMLPreInitializationEvent;
 
 public class Configs
@@ -12,13 +11,9 @@ public class Configs
     protected static File _configFile;
 
     /** Constants **/
-    public static final String modName = "Project Red";
+    public static final String modName = "Raster Device";
     public static final String version = "@VERSION@";
     public static final String buildnumber = "@BUILD_NUMBER@";
-
-   
-    /** Item IDs **/
-    public static int item_RasterDevice;
 
     /** Settings **/
 
@@ -37,9 +32,6 @@ public class Configs
     {
         Configuration localConfig = new Configuration(file);
         localConfig.load();
-
-        item_RasterDevice = localConfig.getItem("item_RasterDevice", 5024).getInt();
-
         localConfig.save();
     }
 }

@@ -7,6 +7,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
 import javax.imageio.ImageIO;
@@ -15,7 +16,6 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.ScaledResolution;
 import net.minecraft.client.renderer.OpenGlHelper;
 import net.minecraft.client.renderer.RenderHelper;
-import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.client.renderer.entity.RenderItem;
 import net.minecraft.creativetab.CreativeTabs;
 import net.minecraft.item.Item;
@@ -29,6 +29,7 @@ import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.OpenGLException;
 
 import codechicken.lib.colour.ColourRGBA;
+import cpw.mods.fml.common.registry.GameData;
 
 public class RasterJob
 {    
@@ -37,8 +38,8 @@ public class RasterJob
     
     private String saveDir = "raster";
 
-    private List<Integer> blacklist = new ArrayList<Integer>();
-    private List<Integer> whitelist = new ArrayList<Integer>();
+    private List<Item> blacklist = new ArrayList<Item>();
+    private List<Item> whitelist = new ArrayList<Item>();
     
     private int savedWidth = 854;
     private int savedHeight = 480;
@@ -50,15 +51,15 @@ public class RasterJob
         return this;
     }
     
-    public RasterJob addToBlackList(int id)
+    public RasterJob addToBlackList(Item item)
     {
-        blacklist.add(id);
+        blacklist.add(item);
         return this;
     }
     
-    public RasterJob addToWhiteList(int id)
+    public RasterJob addToWhiteList(Item item)
     {
-        whitelist.add(id);
+        whitelist.add(item);
         return this;
     }
     
@@ -147,21 +148,23 @@ public class RasterJob
 
         try
         {
-            for (int i = 0; i < Item.itemsList.length; i++)
+            @SuppressWarnings("unchecked")
+            Iterator<Item> it = GameData.getItemRegistry().iterator();
+            while (it.hasNext())
             {
-                Item item = Item.itemsList[i];
+                Item item = it.next();
                 if (item == null)
                     continue;
                 
-                if (!isIDAllowed(i))
+                if (!isItemAllowed(item))
                     continue;
                 
                 ArrayList<ItemStack> sub = new ArrayList<ItemStack>();
-                item.getSubItems(i, CreativeTabs.tabAllSearch, sub);
+                item.getSubItems(item, CreativeTabs.tabAllSearch, sub);
                 
                 for (ItemStack stack : sub)
                 {
-                    System.out.println("Rastering " + i + ":" + stack.getItemDamage() + " [" + getName(stack) + "]");
+                    System.out.println("Rastering " + item.getUnlocalizedName() + ":" + stack.getItemDamage() + " [" + getName(stack) + "]");
                     
                     try
                     {
@@ -187,7 +190,9 @@ public class RasterJob
         catch (Throwable t)
         {
         }
-        
+
+        System.out.println("Raster Job took " + (System.currentTimeMillis() - start) + " milliseconds.");
+
         return this;
     }
     
@@ -207,9 +212,7 @@ public class RasterJob
             throwIfError();
         }
         catch (Throwable t)
-        {
-            Tessellator.instance = new Tessellator();
-            
+        {   
             System.err.println("RENDER FALIED: " + getName(stack));
             t.printStackTrace();
             done = false;
@@ -269,20 +272,20 @@ public class RasterJob
             name = stack.getDisplayName().replaceAll("^tile\\.", "");
 
         if (name.isEmpty())
-            name = stack.itemID + ":" + stack.getItemDamage();
+            name = stack.getUnlocalizedName()+ ":" + stack.getItemDamage();
 
         return name;
     }
     
-    private boolean isIDAllowed(int id)
+    private boolean isItemAllowed(Item item)
     {
         if (blacklist.isEmpty() && whitelist.isEmpty())
             return true;
 
-        if (blacklist.contains(Integer.valueOf(id)))
+        if (blacklist.contains(item))
             return false;
         
-        if (whitelist.contains(Integer.valueOf(id)))
+        if (whitelist.contains(item))
             return true;
         
         return false;

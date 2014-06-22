@@ -1,18 +1,15 @@
 package mrtjp.rasterdevice;
 
 import net.minecraftforge.common.MinecraftForge;
+import cpw.mods.fml.common.FMLCommonHandler;
 import cpw.mods.fml.common.Mod;
 import cpw.mods.fml.common.Mod.Instance;
 import cpw.mods.fml.common.SidedProxy;
 import cpw.mods.fml.common.event.FMLInitializationEvent;
 import cpw.mods.fml.common.event.FMLPostInitializationEvent;
 import cpw.mods.fml.common.event.FMLPreInitializationEvent;
-import cpw.mods.fml.common.network.NetworkMod;
-import cpw.mods.fml.common.registry.TickRegistry;
-import cpw.mods.fml.relauncher.Side;
 
 @Mod(modid = "RasterDevice", useMetadata = true)
-@NetworkMod(clientSideRequired = true, serverSideRequired = false)
 public class RasterDevice
 {
     /** Items **/
@@ -42,6 +39,6 @@ public class RasterDevice
     public void postInit(FMLPostInitializationEvent event)
     {
         proxy.postInit();
-        TickRegistry.registerTickHandler(new RasterTickHandler(), Side.CLIENT);
+        FMLCommonHandler.instance().bus().register(new RasterTickHandler());
     }
 }

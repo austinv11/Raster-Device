@@ -5,6 +5,8 @@ import java.util.List;
 
 import mrtjp.rasterdevice.RenderUtils;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.audio.PositionedSoundRecord;
+import net.minecraft.util.ResourceLocation;
 
 import org.lwjgl.opengl.GL11;
 
@@ -24,7 +26,7 @@ public abstract class WidgetButton extends GhostWidget
         if (pointInside(x, y) && actionCommand != null)
         {
             sendAction(actionCommand, button);
-            Minecraft.getMinecraft().sndManager.playSoundFX("random.click", 1, 1);
+            Minecraft.getMinecraft().getSoundHandler().playSound(PositionedSoundRecord.func_147674_a(new ResourceLocation("gui.button.press"), 1));
         }
     }
 
@@ -151,7 +153,7 @@ public abstract class WidgetButton extends GhostWidget
                 if (actionCommand != null)
                     sendAction(actionCommand, button);
 
-                Minecraft.getMinecraft().sndManager.playSoundFX("random.click", 1, 1);
+                Minecraft.getMinecraft().getSoundHandler().playSound(PositionedSoundRecord.func_147674_a(new ResourceLocation("gui.button.press"), 1));
                 boolean old = checked;
                 checked = !checked;
                 onStateChanged(old);

@@ -1,13 +1,11 @@
 package mrtjp.rasterdevice.copied_utils;
 
-import java.awt.Point;
 import java.util.ArrayList;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiScreen;
 import net.minecraft.util.ResourceLocation;
 
-import org.lwjgl.input.Mouse;
 import org.lwjgl.opengl.GL11;
 
 public class GhostGuiScreen extends GuiScreen implements IStackableGui, IGuiActionListener

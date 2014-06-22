@@ -1,0 +1,16 @@
+[
+{
+  "modid": "RasterDevice",
+  "name": "Raster Device",
+  "description": "Small utility to render minecraft items and blocks into png files for use on wikis, blogs, etc.",
+  "version": "${version}",
+  "mcversion": "${mcversion}",
+  "url": "",
+  "updateUrl": "",
+  "authorList": ["MrTJP"],
+  "credits": "",
+  "logoFile": "",
+  "screenshots": [],
+  "dependencies": [ "CodeChickenLib" ]
+}
+]
