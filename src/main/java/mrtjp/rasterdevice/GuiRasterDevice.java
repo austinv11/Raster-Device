@@ -59,12 +59,13 @@ public class GuiRasterDevice extends GhostGuiScreen
     public void drawForeground()
     {
         for (int i = 0; i < 6; i++)
-            fontRenderer.drawString("x" + (16<<i), 30, 7 + 16*i, 0xFFFFFF);
+            fontRendererObj.drawString("x" + (16<<i), 30, 7 + 16*i, 0xFFFFFF);
     }
     
     @Override
     public void actionPerformed(String actionCommand, Object... params)
     {
+        System.out.println("actionPerformed [" + actionCommand + "]");
         if (actionCommand.equals("raster"))
         {
             if (x16.isChecked())

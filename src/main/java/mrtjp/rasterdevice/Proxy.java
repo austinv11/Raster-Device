@@ -9,7 +9,7 @@ public class Proxy
     
     public void init()
     {
-        RasterDevice.rasterDevice = new ItemRasterDevice(Configs.item_RasterDevice);
+        RasterDevice.rasterDevice = new ItemRasterDevice();
     }
     
     public void postInit()
