@@ -12,136 +12,61 @@ import java.util.List;
 
 import javax.imageio.ImageIO;
 
+import codechicken.lib.colour.ColourARGB;
+import codechicken.lib.colour.ColourRGBA;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.ScaledResolution;
 import net.minecraft.client.renderer.OpenGlHelper;
 import net.minecraft.client.renderer.RenderHelper;
+import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.client.renderer.entity.RenderItem;
 import net.minecraft.creativetab.CreativeTabs;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 
 import org.lwjgl.BufferUtils;
-import org.lwjgl.LWJGLException;
-import org.lwjgl.opengl.Display;
-import org.lwjgl.opengl.DisplayMode;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.OpenGLException;
 
-import codechicken.lib.colour.ColourRGBA;
 import cpw.mods.fml.common.registry.GameData;
 
 public class RasterJob
-{    
-    private int textureWidth;
-    private int textureHeight;
-    
-    private String saveDir = "raster";
+{
+    private int texW;
+    private int texH;
+
+    private String saveDir = "ItemRenders";
 
     private List<Item> blacklist = new ArrayList<Item>();
     private List<Item> whitelist = new ArrayList<Item>();
-    
-    private int savedWidth = 854;
-    private int savedHeight = 480;
-    
-    public RasterJob setSize(int w, int h)
+
+    public RasterJob(int w, int h)
     {
-        textureWidth = w;
-        textureHeight = h;
-        return this;
+        texW = w;
+        texH = h;
     }
-    
+
     public RasterJob addToBlackList(Item item)
     {
         blacklist.add(item);
         return this;
     }
-    
+
     public RasterJob addToWhiteList(Item item)
     {
         whitelist.add(item);
         return this;
     }
-    
-    public RasterJob setSaveDir(String dir)
-    {
-        if (dir == null || dir.isEmpty())
-            return this;
-        
-        saveDir = legalizeFileName(dir);
 
-        return this;
-    }
-    
-    public boolean pushWindowSize()
-    {
-        Minecraft mc = Minecraft.getMinecraft();
-
-        int oldW = mc.displayWidth;
-        int oldH = mc.displayHeight;
-        
-        int newW = Math.max(1024, textureWidth);
-        int newH = textureHeight;
-
-        if (resize(newW, newH))
-        {
-            savedWidth = oldW;
-            savedHeight = oldH;
-            return true;
-        }
-        
-        return false;
-    }
-    
-    public boolean popWindowSize()
-    {
-        return resize(savedWidth, savedHeight);
-    }
-    
-    private boolean resize(int w, int h)
-    {
-        Minecraft mc = Minecraft.getMinecraft();
-        
-        if (mc.displayWidth != w || mc.displayHeight != h)
-        {
-            try
-            {
-                Display.setDisplayMode(new DisplayMode(w, h));
-            }
-            catch (LWJGLException e)
-            {
-                e.printStackTrace();
-            }
-            
-            mc.displayWidth = w <= 0 ? 1 : w;
-            mc.displayHeight = h <= 0 ? 1 : h;
-
-            if (mc.currentScreen != null)
-            {
-                ScaledResolution scaledresolution = new ScaledResolution(mc.gameSettings, w, h);
-                int k = scaledresolution.getScaledWidth();
-                int l = scaledresolution.getScaledHeight();
-                mc.currentScreen.setWorldAndResolution(mc, k, l);
-            }
-            
-            return true;
-        }
-
-        return false;
-    }
-    
     public RasterJob raster()
     {
         Minecraft mc = Minecraft.getMinecraft();
-        
-        File folder = new File(mc.mcDataDir, saveDir + " x" + textureHeight);
+
+        File folder = new File(mc.mcDataDir, saveDir+" x"+texH);
         int count = 2;
-        while (folder.exists())
-            folder = new File(mc.mcDataDir, saveDir + " x" + textureHeight + "_" + (count++));
+        while (folder.exists()) folder = new File(mc.mcDataDir, saveDir+" x"+texH+"_"+(count++));
         folder.mkdirs();
-        
-        throwIfError();
-        setupCanvas();
+
+        pushInitial();
 
         RenderItem r = new RenderItem();
         long start = System.currentTimeMillis();
@@ -153,108 +78,123 @@ public class RasterJob
             while (it.hasNext())
             {
                 Item item = it.next();
-                if (item == null)
-                    continue;
-                
-                if (!isItemAllowed(item))
-                    continue;
-                
+
+                if (item == null) continue;
+                if (!isItemAllowed(item)) continue;
+
                 ArrayList<ItemStack> sub = new ArrayList<ItemStack>();
                 item.getSubItems(item, CreativeTabs.tabAllSearch, sub);
-                
+
                 for (ItemStack stack : sub)
                 {
                     System.out.println("Rastering " + item.getUnlocalizedName() + ":" + stack.getItemDamage() + " [" + getName(stack) + "]");
-                    
+
                     try
                     {
-                        if (doRaster(r, stack))
-                            drawRasterToFile(folder, getName(stack));
+                        if (doRaster(r, stack)) drawRasterToFile(folder, getName(stack));
                     }
-                    catch (OpenGLException e)
+                    catch (Throwable t)
                     {
-                        if (e.getMessage().equals("Stack overflow (1283)"))
-                        {
-                            setupCanvas();
-                            if (doRaster(r, stack))
-                                drawRasterToFile(folder, getName(stack));
-                        }
-                        else
-                            throw e;
+                        System.err.println("RENDER FALIED: "+getName(stack));
+                        t.printStackTrace();
                     }
-                    
+
                     clearCanvas();
                 }
             }
         }
-        catch (Throwable t)
-        {
-        }
+        catch (Throwable t) {}
 
+        popInitial();
         System.out.println("Raster Job took " + (System.currentTimeMillis() - start) + " milliseconds.");
 
         return this;
     }
-    
+
+    private void pushInitial()
+    {
+        glPushMatrix();
+        glPushAttrib(GL_ALL_ATTRIB_BITS);
+        glViewport(0, 0, texW, texH);
+
+        clearCanvas();
+
+        glDisable(GL11.GL_TEXTURE_2D);
+        glDisable(GL_BLEND);
+        glEnable(GL_DEPTH_TEST);
+        RenderHelper.disableStandardItemLighting();
+        glPopAttrib();
+
+        float scale = (float)Math.max(texW, texH)/32f;
+        glScalef(scale, scale, scale);
+
+        RenderHelper.enableGUIStandardItemLighting();
+        glEnable(GL_RESCALE_NORMAL);
+        glEnable(GL_DEPTH_TEST);
+        glEnable(GL_ALPHA_TEST);
+        OpenGlHelper.setLightmapTextureCoords(OpenGlHelper.lightmapTexUnit, 0.0F, 0.0F);
+    }
+
+    private void popInitial()
+    {
+        glPopMatrix();
+    }
+
+    private void clearCanvas()
+    {
+        glClearColor(0.0F, 0.0F, 0.0F, 0.0F);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+    }
+
     private boolean doRaster(RenderItem r, ItemStack stack)
     {
         boolean done = true;
-        
+
         glPushAttrib(GL_ALL_ATTRIB_BITS);
         glPushMatrix();
-        throwIfError();
 
         try
         {
+            try {Tessellator.instance.draw();} catch (Throwable t2) {}
+
             Minecraft mc = Minecraft.getMinecraft();
             r.renderItemAndEffectIntoGUI(mc.fontRenderer, mc.renderEngine, stack, 0, 0);
             r.renderItemOverlayIntoGUI(mc.fontRenderer, mc.renderEngine, stack, 0, 0, "");
-            throwIfError();
         }
         catch (Throwable t)
-        {   
-            System.err.println("RENDER FALIED: " + getName(stack));
-            t.printStackTrace();
+        {
             done = false;
         }
-        
+
         glPopMatrix();
         glPopAttrib();
-        throwIfError();
         return done;
     }
-    
+
     private void drawRasterToFile(File folder, String name)
     {
-        int bufferSize = textureWidth * textureHeight * 4;
-        
-        ByteBuffer data = BufferUtils.createByteBuffer(bufferSize);
-        glReadPixels(0, 0, textureWidth, textureHeight, GL_RGBA, GL_UNSIGNED_BYTE, data);
+        int bufferSize = texW * texH *4;
 
-        throwIfError();
+        ByteBuffer data = BufferUtils.createByteBuffer(bufferSize);
+        glReadPixels(0, Minecraft.getMinecraft().displayHeight-texH, texW, texH, GL_RGBA, GL_UNSIGNED_BYTE, data);
 
         name = legalizeFileName(name);
-        File image = new File(folder, name + ".png");
+        File image = new File(folder, name+".png");
         int count = 2;
-        while (image.exists())
-            image = new File(folder, name + " (" + (count++) + ")" + ".png");
+        while (image.exists()) image = new File(folder, name+" ("+(count++)+")"+".png");
 
-        BufferedImage png = new BufferedImage(textureWidth, textureHeight, BufferedImage.TYPE_INT_ARGB);
-        
+        BufferedImage png = new BufferedImage(texW, texH, BufferedImage.TYPE_INT_ARGB);
+
         int x = 0;
         int y = 0;
-        
+
         while(data.hasRemaining())
         {
-            png.setRGB(x, textureHeight - (y + 1), new ColourRGBA(data.get()&0xFF, data.get()&0xFF, data.get()&0xFF, data.get()&0xFF).argb());
-            
-            if (++x == textureWidth)
-            {
-                x = 0;
-                y++;
-            }
+            png.setRGB(x, texH -(y+1), (data.get()&0xFF)<<16 | (data.get()&0xFF)<<8 | (data.get()&0xFF) | (data.get()&0xFF)<<24);
+            //png.setRGB(x, texH -(y+1), new ColourRGBA(data.get(), data.get(), data.get(), data.get()).argb());
+            if (++x == texW) { x = 0; y++; }
         }
-        
+
         try
         {
             ImageIO.write(png, "png", image);
@@ -264,85 +204,28 @@ public class RasterJob
             e.printStackTrace();
         }
     }
-    
+
     private String getName(ItemStack stack)
     {
         String name = stack.getDisplayName();
-        if (name.isEmpty())
-            name = stack.getDisplayName().replaceAll("^tile\\.", "");
-
-        if (name.isEmpty())
-            name = stack.getUnlocalizedName()+ ":" + stack.getItemDamage();
-
+        if (name.isEmpty()) name = stack.getDisplayName().replaceAll("^tile\\.", "");
+        if (name.isEmpty()) name = stack.getUnlocalizedName()+ ":" + stack.getItemDamage();
         return name;
     }
-    
+
     private boolean isItemAllowed(Item item)
     {
-        if (blacklist.isEmpty() && whitelist.isEmpty())
-            return true;
-
-        if (blacklist.contains(item))
-            return false;
-        
-        if (whitelist.contains(item))
-            return true;
-        
+        if (blacklist.isEmpty() && whitelist.isEmpty()) return true;
+        if (blacklist.contains(item)) return false;
+        if (whitelist.contains(item)) return true;
         return false;
-    }
-
-    private void setupCanvas()
-    {
-        glPushAttrib(GL_ALL_ATTRIB_BITS);
-        glViewport(0, 0, textureWidth, textureHeight);
-        throwIfError();
-
-        clearCanvas();
-
-        glDisable(GL11.GL_TEXTURE_2D);
-        glDisable(GL_BLEND);
-        glEnable(GL_DEPTH_TEST);
-        RenderHelper.disableStandardItemLighting();
-        throwIfError();
-
-        glPopAttrib();
-        throwIfError();
-
-        float factor = (float) Math.max(textureWidth, textureHeight);        
-        float scale = Math.min((32.0f*factor)/512.0f, 16.0f);
-
-        glScalef(scale, scale, scale);
-
-        throwIfError();
-
-        RenderHelper.enableGUIStandardItemLighting();
-        glEnable(GL_RESCALE_NORMAL);
-        OpenGlHelper.setLightmapTextureCoords(OpenGlHelper.lightmapTexUnit, 0.0F, 0.0F);
-        throwIfError();
-    }
-
-    private void clearCanvas()
-    {
-        glClearColor(0.0F, 0.0F, 0.0F, 0.0F);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
-        throwIfError();
-    }
-
-    private void throwIfError()
-    {
-        final int e = glGetError();
-        if (e != GL_NO_ERROR)
-            throw new OpenGLException(e);
     }
 
     private String legalizeFileName(String name)
     {
         String dir = "";
-        if (name == null || name.isEmpty())
-            dir = "null";
-        else
-            dir = name.replaceAll("[\\\\/:*?\"<>|]", "_");
-
+        if (name == null || name.isEmpty()) dir = "null";
+        else dir = name.replaceAll("[\\\\/:*?\"<>|]", "_");
         return dir;
     }
 }
