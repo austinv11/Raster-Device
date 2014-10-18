@@ -1,19 +1,6 @@
 package mrtjp.rasterdevice;
-import static org.lwjgl.opengl.GL11.*;
-import static org.lwjgl.opengl.GL12.GL_RESCALE_NORMAL;
 
-import java.awt.image.BufferedImage;
-import java.io.File;
-import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-
-import javax.imageio.ImageIO;
-
-import codechicken.lib.colour.ColourARGB;
-import codechicken.lib.colour.ColourRGBA;
+import cpw.mods.fml.common.registry.GameData;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.OpenGlHelper;
 import net.minecraft.client.renderer.RenderHelper;
@@ -22,12 +9,20 @@ import net.minecraft.client.renderer.entity.RenderItem;
 import net.minecraft.creativetab.CreativeTabs;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
-
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.GL11;
-import org.lwjgl.opengl.OpenGLException;
 
-import cpw.mods.fml.common.registry.GameData;
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
+import java.io.File;
+import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+
+import static org.lwjgl.opengl.GL11.*;
+import static org.lwjgl.opengl.GL12.GL_RESCALE_NORMAL;
 
 public class RasterJob
 {
