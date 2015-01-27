@@ -13,6 +13,8 @@ public class RasterDeviceMod
     @Instance("RasterDevice")
     public static RasterDeviceMod instance;
 
+    public String MOD_ID_TO_RASTER = "all";
+
     @Mod.EventHandler
     public void preInit(FMLPreInitializationEvent event)
     {

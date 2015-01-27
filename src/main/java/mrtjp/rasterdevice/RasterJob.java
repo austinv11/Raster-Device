@@ -18,6 +18,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 
@@ -70,31 +71,38 @@ public class RasterJob
         {
             @SuppressWarnings("unchecked")
             Iterator<Item> it = GameData.getItemRegistry().iterator();
+
+            if (!RasterDeviceMod.instance.MOD_ID_TO_RASTER.equalsIgnoreCase("all"))
+                System.out.println("Rastering items from mod id(s): "+RasterDeviceMod.instance.MOD_ID_TO_RASTER);
+
             while (it.hasNext())
             {
                 Item item = it.next();
-
-                if (item == null) continue;
-                if (!isItemAllowed(item)) continue;
-
-                ArrayList<ItemStack> sub = new ArrayList<ItemStack>();
-                item.getSubItems(item, CreativeTabs.tabAllSearch, sub);
-
-                for (ItemStack stack : sub)
+                if (RasterDeviceMod.instance.MOD_ID_TO_RASTER.equalsIgnoreCase("all") || Arrays.asList(RasterDeviceMod.instance.MOD_ID_TO_RASTER.split(",")).contains(Item.itemRegistry.getNameForObject(item).split(":")[0]))
                 {
-                    System.out.println("Rastering " + item.getUnlocalizedName() + ":" + stack.getItemDamage() + " [" + getName(stack) + "]");
+                    if (item == null) continue;
+                    if (!isItemAllowed(item)) continue;
 
-                    try
+                    ArrayList<ItemStack> sub = new ArrayList<ItemStack>();
+                    item.getSubItems(item, CreativeTabs.tabAllSearch, sub);
+                    for (ItemStack stack : sub)
                     {
-                        if (doRaster(r, stack)) drawRasterToFile(folder, getName(stack));
-                    }
-                    catch (Throwable t)
-                    {
-                        System.err.println("RENDER FALIED: "+getName(stack));
-                        t.printStackTrace();
-                    }
 
-                    clearCanvas();
+                        System.out.println("Rastering "+item.getUnlocalizedName()+":"+stack.getItemDamage()+" ["+getName(stack)+"]");
+
+                        try
+                        {
+                            if (doRaster(r, stack))
+                                drawRasterToFile(folder, getName(stack));
+                        }
+                        catch (Throwable t)
+                        {
+                            System.err.println("RENDER FALIED: "+getName(stack));
+                            t.printStackTrace();
+                        }
+
+                        clearCanvas();
+                    }
                 }
             }
         }

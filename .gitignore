@@ -5,3 +5,8 @@
 /bin/
 /build/
 /eclipse/
+*.iml
+*.ipr
+*.iws
+/run
+/out

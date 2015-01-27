@@ -7,7 +7,9 @@ import cpw.mods.fml.client.config.IConfigElement;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiButton;
 import net.minecraft.client.gui.GuiScreen;
+import net.minecraft.client.gui.GuiTextField;
 
+import java.awt.*;
 import java.util.ArrayList;
 import java.util.Set;
 
@@ -17,6 +19,8 @@ public class GuiFactory implements IModGuiFactory
 {
     public static class FMLConfigGuiScreen extends GuiConfig
     {
+
+        private GuiTextField text;
 
         public FMLConfigGuiScreen(GuiScreen parent)
         {
@@ -65,6 +69,36 @@ public class GuiFactory implements IModGuiFactory
 
             this.buttonList.add(new GuiUnicodeGlyphButton(3333, this.width/2-(65/2)+80,
                     this.height/dy+4*25, 80, 20, "Render all", RESET_CHAR, 2.0F));
+            text = new GuiTextField(Minecraft.getMinecraft().fontRenderer, this.width/2-(65/2)+80,
+                    this.height/dy+3*25, 80, 20);
+            text.setText(RasterDeviceMod.instance.MOD_ID_TO_RASTER);
+        }
+
+        @Override
+        protected void mouseClicked(int x, int y, int mouseEvent) {
+            super.mouseClicked(x, y, mouseEvent);
+            text.mouseClicked(x, y, mouseEvent);
+        }
+
+        @Override
+        public void updateScreen() {
+            super.updateScreen();
+            text.updateCursorCounter();
+        }
+
+        @Override
+        protected void keyTyped(char eventChar, int eventKey) {
+            super.keyTyped(eventChar, eventKey);
+            if (text.textboxKeyTyped(eventChar, eventKey))
+                RasterDeviceMod.instance.MOD_ID_TO_RASTER = text.getText();
+        }
+
+        @Override
+        public void drawScreen(int mouseX, int mouseY, float partialTicks) {
+            super.drawScreen(mouseX, mouseY, partialTicks);
+            Minecraft.getMinecraft().fontRenderer.drawString("Mod ID to Raster:", this.width/2-(65/2)+80,
+                    this.height/5+(int)Math.floor(2.5*25), Color.WHITE.getRGB());
+            text.drawTextBox();
         }
     }
 
