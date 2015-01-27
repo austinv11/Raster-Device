@@ -75,26 +75,30 @@ public class GuiFactory implements IModGuiFactory
         }
 
         @Override
-        protected void mouseClicked(int x, int y, int mouseEvent) {
+        protected void mouseClicked(int x, int y, int mouseEvent)
+        {
             super.mouseClicked(x, y, mouseEvent);
             text.mouseClicked(x, y, mouseEvent);
         }
 
         @Override
-        public void updateScreen() {
+        public void updateScreen()
+        {
             super.updateScreen();
             text.updateCursorCounter();
         }
 
         @Override
-        protected void keyTyped(char eventChar, int eventKey) {
+        protected void keyTyped(char eventChar, int eventKey)
+        {
             super.keyTyped(eventChar, eventKey);
             if (text.textboxKeyTyped(eventChar, eventKey))
                 RasterDeviceMod.instance.MOD_ID_TO_RASTER = text.getText();
         }
 
         @Override
-        public void drawScreen(int mouseX, int mouseY, float partialTicks) {
+        public void drawScreen(int mouseX, int mouseY, float partialTicks)
+        {
             super.drawScreen(mouseX, mouseY, partialTicks);
             Minecraft.getMinecraft().fontRenderer.drawString("Mod ID to Raster:", this.width/2-(65/2)+80,
                     this.height/5+(int)Math.floor(2.5*25), Color.WHITE.getRGB());
